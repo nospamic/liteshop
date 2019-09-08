@@ -74,7 +74,7 @@ Add2::Add2(bool *isQueue, QWidget *parent)
 
     spinPrint = new QSpinBox;
     spinPrint->setFont(big);
-    spinPrint->setFixedWidth(50);
+    spinPrint->setFixedWidth(51);
     hor4->addWidget(spinPrint);
 
     vert->addLayout(hor4);
