@@ -22,7 +22,7 @@ Add2::Add2(bool *isQueue, QWidget *parent)
 
     QHBoxLayout *hor = new QHBoxLayout;
     linePrice = new QLineEdit;
-    linePrice->setFixedWidth(200);
+    linePrice->setFixedWidth(201);
     linePrice->setValidator(new QRegExpValidator(money, this));
     QString str = "Цена (" + ini.getAlternativeCurrency() + ")";
     linePrice->setPlaceholderText(str);
