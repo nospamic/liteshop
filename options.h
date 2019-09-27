@@ -35,7 +35,7 @@ public slots:
     void onButtonCancelClicked();
 
 private:
-     Ini ini;
+
 
     QLineEdit * stickerVertCorrect;
     QLineEdit * checkPrinterName;

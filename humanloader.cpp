@@ -3,7 +3,7 @@
 HumanLoader::HumanLoader()
 {
     this->path = "humans.txt";
-    this->reservPath = Textbutor::qToStd(ini.getReservPath());
+    this->reservPath = Textbutor::qToStd(Ini::getInstance()->getReservPath());
     reservPath += "humans_res.txt";
 
     if(access(path, 0) == -1)

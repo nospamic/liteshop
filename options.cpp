@@ -17,49 +17,49 @@ Options::Options(QWidget *parent) : QDialog(parent)
     stickerVertCorrect = new QLineEdit;
     vertLine->addWidget(stickerVertCorrect);
     stickerVertCorrect->setValidator(new QRegExpValidator(intager, this));
-    stickerVertCorrect->setText(QString::number(ini.getStickerVertCorrect()));
+    stickerVertCorrect->setText(QString::number(Ini::getInstance()->getStickerVertCorrect()));
 
     QLabel *labelCheck = new QLabel("Имя принтера чеков - ");
     vertLabel->addWidget(labelCheck);
     checkPrinterName = new QLineEdit;
     vertLine->addWidget(checkPrinterName);
-    checkPrinterName->setText(ini.getCheckPrinterName());
+    checkPrinterName->setText(Ini::getInstance()->getCheckPrinterName());
 
     QLabel *labelSticker = new QLabel("Имя принтера этикеток - ");
     vertLabel->addWidget(labelSticker);
     stickerPrinterName = new QLineEdit;
     vertLine->addWidget(stickerPrinterName);
-    stickerPrinterName->setText(ini.getStickerPrinterName());
+    stickerPrinterName->setText(Ini::getInstance()->getStickerPrinterName());
 
     QLabel *labelreservPath = new QLabel("Путь для резервного копирования - ");
     vertLabel->addWidget(labelreservPath);
     reservPath = new QLineEdit;
     vertLine->addWidget(reservPath);
-    reservPath->setText(ini.getReservPath());
+    reservPath->setText(Ini::getInstance()->getReservPath());
 
     QLabel *labelnationalCurrency = new QLabel("Национальная валюта - ");
     vertLabel->addWidget(labelnationalCurrency);
     nationalCurrency = new QLineEdit;
     vertLine->addWidget(nationalCurrency);
-    nationalCurrency->setText(ini.getNationalCurrency());
+    nationalCurrency->setText(Ini::getInstance()->getNationalCurrency());
 
     QLabel *labelalternativeCurrency = new QLabel("Альтернативная валюта - ");
     vertLabel->addWidget(labelalternativeCurrency);
     alternativeCurrency = new QLineEdit;
     vertLine->addWidget(alternativeCurrency);
-    alternativeCurrency->setText(ini.getAlternativeCurrency());
+    alternativeCurrency->setText(Ini::getInstance()->getAlternativeCurrency());
 
     QLabel *labelstoreName= new QLabel("Название магазина - ");
     vertLabel->addWidget(labelstoreName);
     storeName = new QLineEdit;
     vertLine->addWidget(storeName);
-    storeName->setText(ini.getStoreName());
+    storeName->setText(Ini::getInstance()->getStoreName());
 
     QLabel *labelstoreAddress= new QLabel("Адрес магазина - ");
     vertLabel->addWidget(labelstoreAddress);
     storeAddress = new QLineEdit;
     vertLine->addWidget(storeAddress);
-    storeAddress->setText(ini.getStoreAddress());
+    storeAddress->setText(Ini::getInstance()->getStoreAddress());
 
 
     hor->addLayout(vertLabel);
@@ -77,7 +77,7 @@ Options::Options(QWidget *parent) : QDialog(parent)
     checkText = new QTextEdit;
     checkText->setFixedHeight(100);
     vertText->addWidget(checkText);
-    checkText->setText(ini.getCheckText());
+    checkText->setText(Ini::getInstance()->getCheckText());
     box->setLayout(vertText);
     vertComun->addWidget(box);
 
@@ -108,16 +108,16 @@ Options::~Options()
 
 void Options::onButtonSaveClicked()
 {
-    ini.setStickerVertCorrect(stickerVertCorrect->text().toInt());
-    if (!checkPrinterName->text().isEmpty())ini.setCheckPrinterName(checkPrinterName->text());
-    if (!stickerPrinterName->text().isEmpty())ini.setStickerPrinterName(stickerPrinterName->text());
-    if (!reservPath->text().isEmpty())ini.setReservPath(reservPath->text());
-    ini.setNationalCurrency(nationalCurrency->text());
-    ini.setAlternativeCurrency(alternativeCurrency->text());
-    ini.setStoreName(storeName->text());
-    ini.setStoreAddress(storeAddress->text());
-    ini.setCheckText(checkText->toPlainText());
-    ini.save();
+    Ini::getInstance()->setStickerVertCorrect(stickerVertCorrect->text().toInt());
+    if (!checkPrinterName->text().isEmpty())Ini::getInstance()->setCheckPrinterName("---");
+    if (!stickerPrinterName->text().isEmpty())Ini::getInstance()->setStickerPrinterName(stickerPrinterName->text());
+    if (!reservPath->text().isEmpty())Ini::getInstance()->setReservPath(reservPath->text());
+    Ini::getInstance()->setNationalCurrency(nationalCurrency->text());
+    Ini::getInstance()->setAlternativeCurrency(alternativeCurrency->text());
+    Ini::getInstance()->setStoreName(storeName->text());
+    Ini::getInstance()->setStoreAddress(storeAddress->text());
+    Ini::getInstance()->setCheckText(checkText->toPlainText());
+    Ini::getInstance()->save();
     this->close();
 }
 

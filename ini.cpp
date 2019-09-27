@@ -1,5 +1,7 @@
 #include "ini.h"
 
+Ini * Ini::instance = nullptr;
+
 Ini::Ini()
 {
 
@@ -16,6 +18,7 @@ Ini::Ini()
 
     load();
 }
+
 
 void Ini::save()
 {
@@ -36,6 +39,16 @@ void Ini::save()
     }
 
 }
+
+
+Ini *Ini::getInstance()
+{
+    if(instance==nullptr){
+        instance = new Ini;
+    }
+    return instance;
+}
+
 
 int Ini::getStickerVertCorrect(){return stickerVertCorrect;}
 

@@ -34,7 +34,7 @@ public:
 
 
 private:
-    Ini ini;
+
     const char * path;
     std::string reservPath;
     void saveBase();

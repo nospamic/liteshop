@@ -22,6 +22,8 @@
 #include <QTimer>
 #include <QFontDatabase>
 #include <QPrinterInfo>
+#include <QShortcut>
+#include <windows.h>
 #include "unit_loader.h"
 #include "unit.h"
 #include "textbutor.h"
@@ -35,19 +37,23 @@ class Seller : public QDialog
     Q_OBJECT
 
 public:
-    Seller(QWidget *parent = 0);
+    Seller(QWidget *parent = nullptr);
     ~Seller();
 
 private:
+    QVBoxLayout *vert;
+    QVBoxLayout *vert0;
+    QHBoxLayout *hor1;
+    QLabel * lblHead;
     QListWidget *listSearsh;
     QLineEdit *lineBarcod;
     QCheckBox *checkBack;
     QPushButton *buttonDebt;
-    QPushButton *buttonSearsh;
+    //QPushButton *buttonSearsh;
     QListWidget *listCheck;
     QSpinBox *spinQuantity;
     QPushButton *buttonDel;
-    QPushButton *buttonPay;
+    //QPushButton *buttonPay;
     QLabel *labelSumm;
     QLineEdit *linePay;
     QLabel *labelChange;
@@ -56,23 +62,27 @@ private:
     QLineEdit *lineManInfo;
     QTimer *timer;
     QTimer *payTimer;
+    QTimer *timerActiveSeller;
     QPalette white;
     QPalette red;
     QPalette yellow;
     QPalette green;
 
 
-    Unit_loader uLoad;
+    //Unit_loader uLoad;
     Textbutor textbutor;
     HumanLoader humanloader;
     Human man;
-    Ini ini;
     std::vector<Unit>check;
     std::vector<int>quantity;
     float exchange;
     float checkSumm;
     int discount;
     std::string date;
+    int activeSeller;
+    QShortcut *keyF1;
+    QShortcut *keyF2;
+    QShortcut *keyF3;
 
 
 
@@ -86,6 +96,8 @@ private:
     void reset();
     int result();
     void writeOff();
+    void reject();
+    QString getListItem(Unit &unit);
 
 private slots:
     void addToCheck();
@@ -97,7 +109,7 @@ private slots:
     void showChange();
     void delFromCheck();
     void delEnable();
-    void humanTest(QString barcode);
+    void humanTest(const QString& barcode);
     void manShow();
     void nextPressed();
     void searsh(QString word);
@@ -105,6 +117,9 @@ private slots:
     void backClicked();
     void colorLine();
     void debt();
+    void setActiveSeller(int activeSeller);
+    void resetActiveSeller();
+    void fastFind();
 
 };
 

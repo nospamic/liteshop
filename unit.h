@@ -46,6 +46,8 @@ public:
     std::string getHidden();
     un getMinimum();
     un getSales();
+    std::string getCreateDate();
+    float getSalesPerWeek();
 
 private:
     unsigned id;
@@ -64,6 +66,7 @@ private:
     std::string inFilter(std::string str);
     std::string outFilter(std::string str);
 
+    std::string getDate();
     std::string intToString(int value);
     int stringToInt(std::string str);
 

@@ -32,7 +32,7 @@ public:
 private:
     Human man;
     int code;
-    Ini ini;
+
     std::string name;
     std::string tel;
     std::string description;

@@ -7,12 +7,22 @@ Seller::Seller(QWidget *parent)
     discount = 0;
     checkSumm = 0;
     this->setWindowTitle("Продавец");
-    QRegExp intager("[0-9]{0,14}");
+    //QRegExp intager("[0-9]{0,14}");
     QRegExp money("[0-9]{1,13}[.,]{0,1}[0-9]{0,2}");
-    exchange = uLoad.getUnit(100000).getPrice();
+    exchange = Unit_loader::get()->getUnit(100000).getPrice();
 
-    timer = new QTimer();
-    payTimer = new QTimer();
+    this->activeSeller = 1;
+
+    keyF1 = new QShortcut(this);
+    keyF1->setKey(Qt::Key_F1);
+    keyF2 = new QShortcut(this);
+    keyF2->setKey(Qt::Key_F2);
+    keyF3 = new QShortcut(this);
+    keyF3->setKey(Qt::Key_F3);
+
+    timer = new QTimer(this);
+    payTimer = new QTimer(this);
+    timerActiveSeller = new QTimer(this);
 
 
     QFont font("Lucida Console",12);
@@ -24,64 +34,64 @@ Seller::Seller(QWidget *parent)
     yellow.setColor(QPalette::Base, Qt::yellow);
     green.setColor(QPalette::Base, Qt::green);
 
-    QRect r = QApplication::desktop()->screenGeometry();
-    this->resize(800, r.height()*0.8);
+    QRect r =  QApplication::desktop()->screenGeometry();
+    this->resize(800, int(r.height()*0.8));
 
     this->setStyleSheet("QCheckBox { border: 1px solid gray; padding: 2px }");
 
-    QVBoxLayout *vert = new QVBoxLayout;
-    QString str = " Код          Название                                   Цена(" + ini.getNationalCurrency() + ")       К-во(шт.)";
-    QLabel * lblHead = new QLabel(str);
+    vert = new QVBoxLayout(this);
+    QString str = " Код          Название                                   Цена(" + Ini::getInstance()->getNationalCurrency() + ")       К-во(шт.)";
+    lblHead = new QLabel(str,this);
     lblHead->setFont(small);
     vert->addWidget(lblHead);
-    listSearsh = new QListWidget;
+    listSearsh = new QListWidget(this);
     listSearsh->setFont(font);
     vert->addWidget(listSearsh);
 
 
-    QHBoxLayout *hor1 = new QHBoxLayout;
-    lineBarcod = new QLineEdit;
+    hor1 = new QHBoxLayout(this);
+    lineBarcod = new QLineEdit(this);
     lineBarcod->setPlaceholderText("Найти...");
     lineBarcod->setAutoFillBackground(true);
     //lineBarcod->setValidator(new QRegExpValidator(intager, this));
     hor1->addWidget(lineBarcod);
-    checkBack = new QCheckBox("Возврат");
+    checkBack = new QCheckBox("Возврат", this);
     hor1->addWidget(checkBack);
-    buttonDebt = new QPushButton("Долг");
+    buttonDebt = new QPushButton("Долг", this);
     buttonDebt->setAutoDefault(false);
     buttonDebt->setEnabled(false);
     hor1->addWidget(buttonDebt);
 
     vert->addLayout(hor1);
 
-    QHBoxLayout *hor2 = new QHBoxLayout;
-    QVBoxLayout *vert0 = new QVBoxLayout;
-    listCheck = new QListWidget;
+    auto *hor2 = new QHBoxLayout(this);
+    vert0 = new QVBoxLayout();
+    listCheck = new QListWidget(this);
     listCheck->setFont(font);
     vert0->addWidget(listCheck);
-    lineManInfo = new QLineEdit;
+    lineManInfo = new QLineEdit(this);
     lineManInfo->setFont(small);
     lineManInfo->setDisabled(true);
     vert0->addWidget(lineManInfo);
     hor2->addLayout(vert0);
 
-    QVBoxLayout *vert2 = new QVBoxLayout;
-    spinQuantity = new QSpinBox;
+    auto *vert2 = new QVBoxLayout(this);
+    spinQuantity = new QSpinBox(this);
     spinQuantity->setMaximum(999);
     spinQuantity->setEnabled(false);
-    buttonDel = new QPushButton("X");
+    buttonDel = new QPushButton("X",this);
     buttonDel->setEnabled(false);
     buttonDel->setAutoDefault(false);
     vert2->addWidget(spinQuantity);
     vert2->addWidget(buttonDel);
-    labelDiscount = new QLabel;
+    labelDiscount = new QLabel(this);
     QPalette yellowLabel;
     yellowLabel.setColor(QPalette::Background, Qt::yellow);
     labelDiscount->setAutoFillBackground(false);
     labelDiscount->setPalette(yellowLabel);
 
     vert2->addWidget(labelDiscount);
-    buttonNext = new QPushButton;
+    buttonNext = new QPushButton(this);
     QPixmap pixmap("next.bmp");
     QIcon ButtonIcon(pixmap);
     buttonNext->setIcon(ButtonIcon);
@@ -93,12 +103,12 @@ Seller::Seller(QWidget *parent)
 
     vert->addLayout(hor2);
 
-    QHBoxLayout *hor3 = new QHBoxLayout;
-    labelSumm = new QLabel("Сумма: --");
-    linePay = new QLineEdit;
+    auto *hor3 = new QHBoxLayout(this);
+    labelSumm = new QLabel("Сумма: --", this);
+    linePay = new QLineEdit(this);
     linePay->setValidator(new QRegExpValidator(money, this));
     linePay->setPlaceholderText("Оплачено...");
-    labelChange = new QLabel("Сдача: --");
+    labelChange = new QLabel("Сдача: --", this);
     hor3->addWidget(labelSumm);
     hor3->addWidget(linePay);
     hor3->addWidget(labelChange);
@@ -121,6 +131,13 @@ Seller::Seller(QWidget *parent)
     connect(payTimer, SIGNAL(timeout()),lineBarcod, SLOT(setFocus()));
     connect(listSearsh, SIGNAL(clicked(QModelIndex)), lineBarcod, SLOT(setFocus()));
     connect(buttonDebt, SIGNAL(pressed()), this, SLOT(debt()));
+    connect(timerActiveSeller, SIGNAL(timeout()), this, SLOT(resetActiveSeller()));
+    connect(lineBarcod, SIGNAL(textChanged(QString)), this, SLOT(fastFind()));
+
+    connect(keyF1, &QShortcut::activated, [=](){setActiveSeller(1);});
+    connect(keyF2, &QShortcut::activated, [=](){setActiveSeller(2);});
+    connect(keyF3, &QShortcut::activated, [=](){setActiveSeller(3);});
+
 
     getListSelect();
     lineBarcod->setFocus();
@@ -136,7 +153,11 @@ Seller::Seller(QWidget *parent)
     linePay->setWhatsThis("Сюда записываем сумму внесенную клиентом. Для быстрого доступа к этой строке нужно нажать TAB. После рассчета с клиентом нажимаем ENTER для завершения операции и печати чека");
     lineManInfo->setWhatsThis("Если просканирована карта клиента, тут появится информация о клиенте");
 
-
+    setActiveSeller(activeSeller);
+//    qDebug()<<Textbutor::checkSummGen("482000102549")<<" 1";
+//    qDebug()<<Textbutor::checkSummGen("482000102554")<<" 5";
+//    qDebug()<<Textbutor::checkSummGen("482000101000")<<" 8";
+//    qDebug()<<Textbutor::checkSummGen("482000100210")<<" 2";
 }
 
 
@@ -152,18 +173,14 @@ void Seller::getListSelect()
     listSearsh->clear();
     QString word = lineBarcod->text();
 
-    std::vector<Unit>base = uLoad.base;
-    int size = base.size();
+    std::vector<Unit>base = Unit_loader::get()->base;
+    size_t size = base.size();
 
     if (word.isEmpty())
     {
-        for(int n=1; n<size; n++)
+        for(size_t n=1; n<size; n++)
         {
-            QString code = QString::number(base[n].getCode());
-            QString name = textbutor.cutter(QString::fromLocal8Bit((base[n].getName()).c_str()),30);
-            QString price = textbutor.cutter(getQPrice(base[n]),9);
-            QString quantity = QString::number(base[n].getQuantity());
-            listSearsh->addItem(code+"   "+name+"  "+price+" "+quantity);
+            listSearsh->addItem(getListItem(base[n]));
         }
     }
     else
@@ -171,8 +188,9 @@ void Seller::getListSelect()
         searsh(word);
         if(listSearsh->count() == 0)
         {
-            searsh(textbutor.latinToKiril(word));
+            searsh(Textbutor::latinToKiril(word));
         }
+    listSearsh->scrollToTop();
     }
     lineBarcod->setFocus();
 }
@@ -180,13 +198,13 @@ void Seller::getListSelect()
 
 void Seller::sold()
 {
-    if(textbutor.isBarcode(linePay->text()))
+    if(Textbutor::isBarcode(linePay->text()))
     {
         lineBarcod->setText(linePay->text());
         linePay->clear();
         this->barcodeScanned();
     }
-    else if(check.size()>0 && textbutor.toDot(linePay->text()).toFloat() >= result())
+    else if(!check.empty() && Textbutor::toDot(linePay->text()).toFloat() >= result())
     {
         writeOff();
         printCheck();
@@ -194,25 +212,26 @@ void Seller::sold()
         man.setSumm(man.getSumm() + result());
         if (man.getName()!="no")humanloader.edit(man);
 
-        uLoad.addToLog(createLog());
+        Unit_loader::get()->addToLog(createLog());
         reset();
-        QApplication::beep();
+        Beep(800,100);
+        //QApplication::beep();
     }
 }
 
 
 void Seller::showChange()
 {
-    float change = textbutor.toDot(linePay->text()).toFloat() - (result());
-    change = round(change*100)/100;
+    float change = Textbutor::toDot(linePay->text()).toFloat() - (result());
+    change = float(Unit_loader::get()->round(change*100.0f)/100);
     QString qchange;
-    if(linePay->text().isEmpty() || textbutor.toDot(linePay->text()).toFloat() <= (result()))
+    if(linePay->text().isEmpty() ||Textbutor::toDot(linePay->text()).toFloat() <= (result()))
     {
         qchange = "Сдача: --";
     }
     else
     {
-        qchange = "Сдача: " + QString::number(change) + ini.getNationalCurrency();
+        qchange = "Сдача: " + QString::number(change) + Ini::getInstance()->getNationalCurrency();
         this->changeHelp(change);
     }
 
@@ -248,14 +267,14 @@ void Seller::delEnable()
 }
 
 
-void Seller::humanTest(QString barcode)
+void Seller::humanTest(const QString& barcode)
 {
     humanloader.loadBase();
-    int code = barcode.mid(6, 6).toInt();
+    int code = barcode.midRef(6, 6).toInt();
 
     if(man.getTel().substr(0,1) == "!")
     {
-        HumanEdit * edit = new HumanEdit(code, true, this);
+        auto * edit = new HumanEdit(code, true, this);
         edit->show();
         edit->exec();
         humanloader.loadBase();
@@ -273,8 +292,8 @@ void Seller::manShow()
     if(this->man.getName() != "no")
     {
         QString qDiscount = QString::number(int(checkSumm*discount/100));
-        QString manInfo = "Скидка:" + qDiscount + " "+ini.getNationalCurrency()+"    " + QString::fromLocal8Bit((this->man.getName()).c_str())
-        + "     Долг:" + QString::number(this->man.getDebt()) + " "+ini.getNationalCurrency();
+        QString manInfo = "Скидка:" + qDiscount + " "+Ini::getInstance()->getNationalCurrency()+"    " + QString::fromLocal8Bit((this->man.getName()).c_str())
+        + "     Долг:" + QString::number(this->man.getDebt()) + " "+Ini::getInstance()->getNationalCurrency();
         lineManInfo->setText(manInfo);
     }
 }
@@ -289,13 +308,11 @@ void Seller::nextPressed()
 void Seller::searsh(QString word)
 {
     word = word.toLower();
-
-
     std::vector<QString>whatSearsh;
     QString add = "";
     for(int n=0; n<word.size(); n++)
     {
-        if(word.mid(n,1)!=" "){add+=word.mid(n,1);}
+        if(word.midRef(n,1)!=" "){add+=word.midRef(n,1);}
         else
             if(add.size()>0)
             {
@@ -305,30 +322,27 @@ void Seller::searsh(QString word)
     }
     if(add.size()>0) whatSearsh.push_back(add);
 
-    std::vector<Unit>vBase = uLoad.base;
+    std::list<Unit>vBase = Unit_loader::get()->getBaseList();
 
-    int size =  whatSearsh.size();
-    //qDebug()<<"Size="<<size;
-    for(int n = size-1; n >= 0; n--)
+    size_t size =  whatSearsh.size();
+    for(size_t n = size; n-- > 0;)
     {
-        for(unsigned i=0; i<vBase.size(); i++)
+        std::list<Unit>::iterator it = vBase.begin();
+        while(it != vBase.end())
         {
-            int coincidence = 0;
-            QString name = QString::fromLocal8Bit((vBase[i].getName()).c_str());
-            for(int a=0; a<size; a++)
+            size_t coincidence = 0;
+            QString name = QString::fromLocal8Bit((it->getName()).c_str());
+            for(size_t a=0; a<size; a++)
             {
                 if(name.contains(whatSearsh[a], Qt::CaseInsensitive)){coincidence++;}
             }
-            //if(coincidence>0)qDebug()<<"совпадений-"<<coincidence;
+
             if (coincidence==(n+1))
             {
-                QString code = QString::number(vBase[i].getCode());
-                QString name = textbutor.cutter(QString::fromLocal8Bit((vBase[i].getName()).c_str()),30);
-                QString price = textbutor.cutter(getQPrice(vBase[i]),9);
-                QString quantity = QString::number(vBase[i].getQuantity());
-                listSearsh->addItem(code+"   "+name+"  "+price+" "+quantity);
-                vBase.erase(vBase.begin()+i);
-                i--;
+                listSearsh->addItem(getListItem(*it));
+                it = vBase.erase(it);
+            }else{
+                it++;
             }
         }
 
@@ -342,33 +356,34 @@ void Seller::printCheck()
     QDateTime dt = QDateTime::currentDateTime();
     QString dateTime = dt.toString();
     QString qResult = "--------------------------------\n";
-    qResult += ini.getStoreName();
+    qResult += Ini::getInstance()->getStoreName();
     qResult += "\n";
-    qResult += ini.getStoreAddress();
+    qResult += Ini::getInstance()->getStoreAddress();
     qResult += "\n";
     qResult += "--------------------------------\n";
     qResult +="\n\n--" + dateTime + "--" + "\n\n";
     unsigned size = check.size();
     for(unsigned n=0; n<size; n++)
     {
-        qResult += listCheck->item(n)->text().left(32);
+        qResult += listCheck->item(n)->text().leftRef(32);
         qResult +="= ";
-        qResult +=listCheck->item(n)->text().mid(40,6);
+        qResult +=listCheck->item(n)->text().midRef(40,6);
         qResult += "\n";
     }
     qResult += "--------------------------------\n";
-    if (discount > 0) qResult +="Скидка: " + QString::number(uLoad.round(checkSumm*discount/100))+"\n";
+    if (discount > 0) qResult +="Скидка: " + QString::number(Unit_loader::get()->round(checkSumm*discount/100))+"\n";
     qResult +=labelSumm->text() + "\n\n\n";
     qResult += "--------------------------------\n";
-    qResult +=ini.getCheckText();
+    qResult += "Касса: >>>> " + QString::number(activeSeller) + " <<<<\n";
+    qResult +=Ini::getInstance()->getCheckText();
     qResult += "\n--------------------------------\n";
 
 #ifndef QT_NO_PRINTER
-    if(QPrinterInfo::availablePrinterNames().size() > 0)
+    if(!QPrinterInfo::availablePrinterNames().empty() && !(Ini::getInstance()->getCheckPrinterName()=="---"))
     {
         QFont small("Lucida Console",6);
         QPrinter printer(QPrinter::HighResolution);
-        printer.setPrinterName(ini.getCheckPrinterName());
+        printer.setPrinterName(Ini::getInstance()->getCheckPrinterName());
         printer.setPageMargins(QMarginsF(0,0,0,0));
         QPainter paint(&printer);
         paint.setPen(Qt::black);
@@ -396,10 +411,10 @@ void Seller::backClicked()
 
 void Seller::colorLine()
 {
-    if(this->date != uLoad.getDate())
-    {uLoad.makeReservCopy();
+    if(this->date != Unit_loader::get()->getDate())
+    {Unit_loader::get()->makeReservCopy();
     humanloader.saveReserv();
-    this->date = uLoad.getDate();}
+    this->date = Unit_loader::get()->getDate();}
 
     lineBarcod->hasFocus() ? lineBarcod->setPalette(green): lineBarcod->setPalette(white);
     if (checkBack->isChecked()) lineBarcod->setPalette(red);
@@ -418,11 +433,11 @@ void Seller::debt()
         writeOff();
         printCheck();
 
-        man.setDebt(man.getDebt() + result() - textbutor.toDot(linePay->text()).toFloat());
+        man.setDebt(man.getDebt() + result() - Textbutor::toDot(linePay->text()).toFloat());
         man.setDescription(man.getDescription() + createLog());
         humanloader.edit(man);
 
-        uLoad.addToLog(createLog());
+        Unit_loader::get()->addToLog(createLog());
         reset();
         QApplication::beep();
     }
@@ -431,7 +446,7 @@ void Seller::debt()
 
 void Seller::checkShow()
 {
-    if(check.size()==0)
+    if(check.empty())
     {
         buttonDel->setEnabled(false);
 
@@ -451,18 +466,18 @@ void Seller::checkShow()
         for(unsigned n=0; n<check.size(); n++)
         {
             //QString QCode = QString::number(check[n].getCode());
-            QString QName = textbutor.cutter(QString::fromLocal8Bit((check[n].getName()).c_str()), 20);
-            QString QQuantity = textbutor.cutter(QString::number(quantity[n]), 3);
+            QString QName = Textbutor::cutter(QString::fromLocal8Bit((check[n].getName()).c_str()), 20);
+            QString QQuantity = Textbutor::cutter(QString::number(quantity[n]), 3);
             float price;
             if(check[n].isUah())
             {
-                price = uLoad.round(check[n].getPrice());
+                price = Unit_loader::get()->round(check[n].getPrice());
             }
             else
             {
-                price = uLoad.round(check[n].getPrice() * exchange);
+                price = Unit_loader::get()->round(check[n].getPrice() * exchange);
             }
-            QString QPrice = textbutor.cutter(QString::number(price),10);
+            QString QPrice = Textbutor::cutter(QString::number(price),10);
             QString QPriceXQuantity = QString::number(price * quantity[n]);
 
             QString toList = QName + "  " + QQuantity + "x " + QPrice + " = " + QPriceXQuantity;
@@ -470,7 +485,7 @@ void Seller::checkShow()
             checkSumm += int(price * quantity[n]);
         }
         int checkResult = result();
-        QString summ = "К оплате: " + QString::number(checkResult) + " "+ini.getNationalCurrency();
+        QString summ = "К оплате: " + QString::number(checkResult) + " "+Ini::getInstance()->getNationalCurrency();
         labelSumm->setText(summ);
         showChange();
         manShow();
@@ -503,7 +518,7 @@ std::string Seller::createLog()
 
     QString dateTime = dt.toString();
 
-    QString qResult ="--------------------" + dateTime + "--------------------" + QString::number(uLoad.getBalance()) + "\n\n";
+    QString qResult ="--------------------" + dateTime + "--------------------" + QString::number(Unit_loader::get()->getBalance()) + "\n\n";
     unsigned size = check.size();
     for(unsigned n=0; n<size; n++)
     {
@@ -511,10 +526,11 @@ std::string Seller::createLog()
         qResult += "\n";
     }
     qResult += "----------------------------------------------------------------------\n";
-    if (discount > 0) qResult +="Скидка = -" + QString::number(uLoad.round(checkSumm*discount/100)) + "\n";
+    if (discount > 0) qResult +="Скидка = -" + QString::number(Unit_loader::get()->round(checkSumm*discount/100)) + "\n";
     qResult +=labelSumm->text();
-    qResult +="\t Оплачено: " + linePay->text() + " " + ini.getNationalCurrency();
-    qResult +="\t" + labelChange->text() + "\n\n\n";
+    qResult +="\t Оплачено: " + linePay->text() + " " + Ini::getInstance()->getNationalCurrency();
+    qResult +="\t" + labelChange->text() + "\n";
+    qResult += "Касса: >>>>>>>>>>>>>> " + QString::number(activeSeller) + " <<<<<<<<<<<<<<\n\n\n";
 
     return qResult.toLocal8Bit().constData();
 }
@@ -525,11 +541,11 @@ QString Seller::getQPrice(Unit unit)
     float price;
     if(unit.isUah())
     {
-        price = uLoad.round(unit.getPrice());
+        price = Unit_loader::get()->round(unit.getPrice());
     }
     else
     {
-        price = uLoad.round(unit.getPrice() * exchange);
+        price = Unit_loader::get()->round(unit.getPrice() * exchange);
     }
     return QString::number(price);
 }
@@ -537,15 +553,15 @@ QString Seller::getQPrice(Unit unit)
 
 void Seller::changeHelp(float change)
 {
-    int tail = change - int(change/100)*100;
+    int tail = int(change) - int(change/100)*100;
     if(tail >= 30 && tail < 50)
     {
-        QString text = "Дайте " + QString::number(50 - tail) + " " + ini.getNationalCurrency();
+        QString text = "Дайте " + QString::number(50 - tail) + " " + Ini::getInstance()->getNationalCurrency();
         this->lineManInfo->setText(text);
     }
     else if(tail >= 8 && tail < 10)
     {
-        QString text = "Дайте " + QString::number(10 - tail) + " " + ini.getNationalCurrency();
+        QString text = "Дайте " + QString::number(10 - tail) + " " + Ini::getInstance()->getNationalCurrency();
         this->lineManInfo->setText(text);
     }
 
@@ -575,22 +591,22 @@ void Seller::reset()
 
 int Seller::result()
 {
-    return checkSumm - uLoad.round(checkSumm*discount/100);
+    return static_cast<int> (checkSumm - Unit_loader::get()->round(checkSumm*discount/100));
 }
 
 
 void Seller::writeOff()
 {
-    uLoad.load();
+    Unit_loader::get()->load();
 
     for(unsigned n=0; n<check.size(); n++)
     {
-        unsigned position = uLoad.getPosition(check[n].getCode());
-        uLoad.base[position].setQuantity(uLoad.base[position].getQuantity() - quantity[n]);
-        uLoad.base[position].addSales(quantity[n]);
+        unsigned position = Unit_loader::get()->getPosition(check[n].getCode());
+        Unit_loader::get()->base[position].setQuantity(Unit_loader::get()->base[position].getQuantity() - quantity[n]);
+        Unit_loader::get()->base[position].addSales(quantity[n]);
 
     }
-    uLoad.save();
+    Unit_loader::get()->save();
 }
 
 
@@ -599,7 +615,7 @@ void Seller::addToCheck()
     QString strCode = listSearsh->currentItem()->text();
     strCode = strCode.left(6);
     int code = strCode.toInt();
-    Unit item = uLoad.getUnit(code);
+    Unit item = Unit_loader::get()->getUnit(un(code));
     check.push_back(item);
     !checkBack->isChecked()?quantity.push_back(1):quantity.push_back(-1);
     checkShow();
@@ -607,13 +623,15 @@ void Seller::addToCheck()
     this->backClicked();
     buttonDel->setEnabled(false);
     spinQuantity->setEnabled(false);
+    lineBarcod->clear();
+    Beep(1000,100);
 }
 
 
 void Seller::setSpinQuantity()
 {
     int position = listCheck->currentRow();
-    int quant = quantity[position];
+    int quant = quantity[un(position)];
     spinQuantity->setValue(quant);
     listCheck->setCurrentRow(position);
 }
@@ -622,7 +640,7 @@ void Seller::setSpinQuantity()
 void Seller::changeQuantity()
 {
     int position = listCheck->currentRow();
-    quantity[position] = spinQuantity->value();
+    quantity[un(position)] = spinQuantity->value();
     checkShow();
     listCheck->setCurrentRow(position);
 }
@@ -632,14 +650,14 @@ void Seller::barcodeScanned()
 {
     Unit unit;
     QString barcode = lineBarcod->text();
-    if(!textbutor.isBarcode(barcode) && barcode != "")
+    if(!Textbutor::isBarcode(barcode) && barcode != "")
     {
         this->getListSelect();
     }
     else if(barcode.left(6)=="575757")
     {
         humanTest(barcode);
-        int code = barcode.mid(6, 6).toInt();
+        int code = barcode.midRef(6, 6).toInt();
         Human man = humanloader.getHuman(code);
         discount = man.getDiscount();
         QString disc = "  "  + QString::number(discount) + " %";
@@ -649,21 +667,86 @@ void Seller::barcodeScanned()
     }
     else if(barcode=="")
     {
-        linePay->setText(QString::number(checkSumm));
+        if(linePay->text().toFloat()==0.0F) {
+            linePay->setText(QString::number(checkSumm));
+        }
         sold();
     }
     else
     {
-        unit = uLoad.getUnit(barcode.toLocal8Bit().constData());
+        unit = Unit_loader::get()->getUnit(barcode.toLocal8Bit().constData());
         check.push_back(unit);
+
+
         !checkBack->isChecked()?quantity.push_back(1):quantity.push_back(-1);
         this->backClicked();
+        if(unit.getBarcode()=="0000000000000"){
+            Beep(2000,400);
+        }else{
+            Beep(1000,100);
+            if(int(Unit_loader::get()->base.size()-1) > listSearsh->count()){
+                        lineBarcod->clear();
+                        getListSelect();
+                    }
+                    int position = int(Unit_loader::get()->getPosition(unit.getCode())) - 1;
+                    listSearsh->scrollToTop();
+                    listSearsh->scrollToItem(listSearsh->item(position + 6));
+                    listSearsh->item(position)->setTextColor(Qt::red);
+
+
+        }
+
+
     }
     lineBarcod->clear();
     checkShow();
     checkBack->setChecked(false);
     lineBarcod->setFocus();
-
 }
 
 
+void Seller::setActiveSeller(int activeSeller)
+{
+    if(activeSeller==1) lblHead->setStyleSheet("background: #33CC33");
+    if(activeSeller==2) lblHead->setStyleSheet("background: #FF6633");
+    if(activeSeller==3) lblHead->setStyleSheet("background: #3366CC");
+    this->activeSeller = activeSeller;
+    if(activeSeller != 1) timerActiveSeller->start(600000);
+    QString newTitle = this->windowTitle().left(8) +" - Касса №" + QString::number(activeSeller);
+    this->setWindowTitle(newTitle);
+}
+
+void Seller::resetActiveSeller()
+{
+    if(activeSeller != 1 && check.empty()){
+        timerActiveSeller->stop();
+        setActiveSeller(1);
+    }
+}
+
+
+void Seller::fastFind()
+{
+    if(!lineBarcod->text().contains(QRegExp("[0-9]{7,14}")) && !lineBarcod->text().isEmpty()){
+        getListSelect();
+        //qDebug()<<"FastFind-"<<lineBarcod->text();
+    }
+}
+
+
+void Seller::reject() {
+    if(check.empty()) {
+        done(0);
+    }else{
+        this->nextPressed();
+    }
+}
+
+QString Seller::getListItem(Unit &unit)
+{
+    QString code = QString::number(unit.getCode());
+    QString name = Textbutor::cutter(QString::fromLocal8Bit((unit.getName()).c_str()),30);
+    QString price = Textbutor::cutter(getQPrice(unit),9);
+    QString quantity = QString::number(unit.getQuantity());
+    return code+"   "+name+"  "+price+" "+quantity;
+}

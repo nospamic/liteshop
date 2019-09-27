@@ -107,29 +107,41 @@ QString Textbutor::getDate()
         return QString::fromLocal8Bit(date1.c_str());
 }
 
+
 QString Textbutor::checkSummGen(QString barcode)
 {
     float checkSumm=0;
     int number=0;
-    for (unsigned n=0; n<12; n+=2)
+    for (int n=0; n<12; n+=2)
     {
         number=0;
         number = barcode.mid(n, 1).toInt();
         checkSumm += number;
-        //std::cout <<number<<"+";
+        //qDebug() <<number<<"+";
         number = 0;
         number = barcode.mid(n+1, 1).toInt();
         number = number*3;
         checkSumm += number;
-        //std::cout << number << "+";
+        //qDebug() << number << "+";
     }
-    float res = (checkSumm/10) - (int(checkSumm/10));
-    if(res != 0) res = 10-(res*10);
+    float res = (checkSumm/10.0f) - (int(checkSumm/10.0f));
+    //qDebug()<<"res="<<res;
+    if(res != 0.0f) {
+        res = (res *10.0f);
+        //qDebug()<<"res="<<res;
+        //res = res*100;
+        res = round (res);
+        //res=res/100;
+        //qDebug()<<"res="<<res;
+        res = round(10.0f-res);
+    }
 
-    QString result = QString::number(res).left(1);
-    //std::cout << "=" << checkSumm<<" -> "<<res<<"\n";
+    QString result = QString::number(int(res)).left(1);
+    //qDebug() << "=" << checkSumm<<" -> "<<res<<"\n";
+
     return barcode + result;
 }
+
 
 QString Textbutor::testBarcode13(QString barcode)
 {
@@ -137,12 +149,13 @@ QString Textbutor::testBarcode13(QString barcode)
     QString barcodeCorrect = checkSummGen(barcodeBase);
     if (barcode != barcodeCorrect)
     {
-        barcode = barcodeCorrect;
-        QMessageBox msg;
-        msg.setText("Неправильный штрих-код. Исправлен.");
-        msg.exec();
+
+//        barcode = barcodeCorrect;
+//        QMessageBox msg;
+//        msg.setText("Неправильный штрих-код. Исправлен.");
+//        msg.exec();
     }
-    return barcode;
+    return barcodeCorrect;
 }
 
 std::string Textbutor::removeSpaces(std::string str)
@@ -219,13 +232,14 @@ int Textbutor::spaceFirstPos(QString str)
 
 bool Textbutor::isBarcode(QString str)
 {
-    QString digits = "0123456789";
-    if(str.size() < 8)return false;
-    for(int a=0; a<str.size();a++)
-    {
-        if (!digits.contains(str.mid(a,1), Qt::CaseInsensitive)) {return false;}
-    }
-    return true;
+//    QString digits = "0123456789";
+//    if(str.size() < 8)return false;
+//    for(int a=0; a<str.size();a++)
+//    {
+//        if (!digits.contains(str.mid(a,1), Qt::CaseInsensitive)) {return false;}
+//    }
+//    return true;
+    return str.contains(QRegExp("[0-9]{7,14}"));
 }
 
 std::vector<QString> Textbutor::stringToVector(QString word)
@@ -289,4 +303,42 @@ std::string Textbutor::intToString(int a)
 std::string Textbutor::qToStd(QString str)
 {
     return str.toLocal8Bit().constData();
+}
+
+int Textbutor::dayInDate(std::string date)
+{
+    int result=0;
+    std::string day = "";
+    std::string month = "";
+    std::string year = "";
+    unsigned parsPos = 0;
+
+    for (unsigned n = parsPos;n < date.length();n++)
+    {
+        if(date[n]=='.') {parsPos = n+1; break;}
+        day = day + date[n];
+    }
+    for (unsigned n = parsPos;n < date.length();n++)
+    {
+        if(date[n]=='.') {parsPos = n+1; break;}
+        month = month + date[n];
+    }
+    for (unsigned n = parsPos;n < date.length();n++)
+    {
+        if(date[n]=='.') {break;}
+        year = year + date[n];
+    }
+
+    result = Textbutor::stdToInt(day) + Textbutor::stdToInt(month)*30 + Textbutor::stdToInt(year) * 365;
+    return result;
+}
+
+int Textbutor::round(float a)
+{
+        //qDebug()<<"Round - "<<a;
+        a=a*100;
+        if(a>=0) a-int(a)>=0.5F ? a=int(a+1) : a=int(a);
+        if(a<0) a-int(a)<=-0.5F ? a=int(a-1) : a=int(a);
+        //qDebug()<<"Round result - "<<int(a);
+        return int(a/100);
 }

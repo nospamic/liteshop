@@ -21,7 +21,7 @@ MainWindow::MainWindow(QWidget *parent) :
     timerSeller->start(wait);
 
 
-    if(!uLoad.fileExists())uLoad.newFile();
+    if(!Unit_loader::get()->fileExists())Unit_loader::get()->newFile();
 
 
     //------------------------------------------------------------------
@@ -33,13 +33,25 @@ MainWindow::MainWindow(QWidget *parent) :
     //-----------------------------------------------------------------
 
     getListSelect();
-    //if(uLoad.base.size()>10) uLoad.makeReservCopy();
-    this->date = uLoad.getDate();
+    //if(Unit_loader::get()->base.size()>10) Unit_loader::get()->makeReservCopy();
+    this->date = Unit_loader::get()->getDate();
     ui->print->hide();
     ui->pushEdit->setEnabled(false);
+    getGroups();
+    setGroupsVisible(false);
+
     connect (ui->list, SIGNAL(itemSelectionChanged()), this, SLOT(setEditable()));
     connect (timerSeller, SIGNAL(timeout()), this, SLOT(on_buttonSaller_clicked()));
+    connect (ui->lineSelect, SIGNAL(textChanged(QString)), this, SLOT(getListSelect()));
+    //connect (ui->lineSelect, SIGNAL(returnPressed()), this, SLOT(showOrderVal()));
+    for(auto check : groups) connect(check, SIGNAL(clicked(bool)), this, SLOT(getListSelect()));
 
+//    for(auto unit : Unit_loader::get()->base){
+//        QString bar = QString::fromLocal8Bit((unit.getBarcode()).c_str());
+//        if (bar!=Textbutor::testBarcode13(bar)){
+//            qDebug()<<unit.getCode()<<" "<<bar<<" "<<Textbutor::testBarcode13(bar);
+//        }
+//    }
 
 }
 
@@ -59,15 +71,15 @@ void MainWindow::on_list_doubleClicked()
 void MainWindow::on_pushAdd2_clicked()
 {
     timerSeller->stop();
-    do{
-    Add2 * unit = new Add2(isQueue, this);
-    unit->show();
-    unit->exec();
-    uLoad.load();
+
+    Add2 unit(this);
+    unit.show();
+    unit.exec();
+    Unit_loader::get()->load();
     this->getListSelect();
     ui->pushEdit->setEnabled(false);
     ui->list->scrollToBottom();
-    }while(*isQueue);
+
 }
 
 
@@ -86,10 +98,10 @@ void MainWindow::on_pushEdit_clicked()
     timerSeller->stop();
     QString str = ui->list->currentItem()->text().left(6);
     un code = unsigned(str.toInt());
-    Unit_edit * unit = new Unit_edit(code, this);
-    unit->show();
-    unit->exec();
-    uLoad.load();
+    Unit_edit unit(code, this);
+    unit.show();
+    unit.exec();
+    Unit_loader::get()->load();
     this->getListSelect();
     ui->pushEdit->setEnabled(false);
     ui->list->scrollToItem(ui->list->item(pos));
@@ -113,78 +125,82 @@ void MainWindow::on_buttonSaller_clicked()
     if(this->isActiveWindow())
     {
         timerSeller->stop();
-        Seller * shop = new Seller(this);
-        shop->show();
-        shop->exec();
+        Seller  shop;
+        shop.show();
+        shop.exec();
     }
 }
 
 
 void MainWindow::getListSelect()
 {
-        ui->list->clear();
-        QString word = ui->lineSelect->text();
+    timerSeller->stop();
+    timerSeller->start(wait);
 
-        std::vector<Unit>base = uLoad.base;
-        unsigned size = un(base.size());
+    ui->list->clear();
+    QString word = ui->lineSelect->text();
 
-        if (textbutor.isBarcode(word))
+    std::vector<Unit>base = Unit_loader::get()->base;
+    unsigned size = un(base.size());
+
+    if (textbutor.isBarcode(word))
+    {
+        this->state = "searsh";
+        QString text = "Поиск по штрих-коду: " + word;
+        ui->labelContent->setText(text);
+        ui->buttonRefresh->setEnabled(true);
+        for(un n=0; n<size; n++)
         {
-            this->state = "searsh";
-            QString text = "Поиск по штрих-коду: " + word;
-            ui->labelContent->setText(text);
-            ui->buttonRefresh->setEnabled(true);
-            for(un n=0; n<size; n++)
-            {
-                QString barcode = QString::fromLocal8Bit((base[n].getBarcode()).c_str());
-                if(word == barcode)ui->list->addItem(getListItem(base[n]));
-            }
+            QString barcode = QString::fromLocal8Bit((base[n].getBarcode()).c_str());
+            if(word == barcode)ui->list->addItem(getListItem(base[n]));
         }
+    }
 
-        if (word.isEmpty() && state == "normal")
+    if (word.isEmpty() && state == "normal")
+    {
+        ui->labelContent->setText("Все товары на складе.");
+        ui->buttonRefresh->setEnabled(false);
+        for(un n=0; n < size; n++)
         {
-            ui->labelContent->setText("Все товары на складе.");
-            ui->buttonRefresh->setEnabled(false);
-            for(un n=0; n < size; n++)
+            ui->list->addItem(getListItem(base[n]));
+        }
+        ui->list->scrollToBottom();
+    }
+
+    if (!word.isEmpty() && !textbutor.isBarcode(word))
+    {
+        this->state = "searsh";
+        QString text = "Результаты поиска: " + word;
+        ui->labelContent->setText(text);
+        ui->buttonRefresh->setEnabled(true);
+        searsh(word);
+        if(ui->list->count() == 0)
+        {
+            //qDebug()<<"change";
+            ui->lineSelect->setText(textbutor.latinToKiril(word));
+            searsh(textbutor.latinToKiril(word));
+        }
+        ui->list->scrollToTop();
+    }
+
+    if(this->state == "order")
+    {
+        Unit_loader::get()->sortBaseByGroup(base);
+        for(un n=1; n<size; n++)
+        {
+            un minimum = base[n].getMinimum();
+            int quantityInt = (base[n].getQuantity());
+            if (quantityInt < int(minimum) && isGroupChecked(base[n]))
             {
                 ui->list->addItem(getListItem(base[n]));
             }
-            ui->list->scrollToBottom();
         }
-
-        if (!word.isEmpty() && !textbutor.isBarcode(word))
-        {
-            this->state = "searsh";
-            QString text = "Результаты поиска: " + word;
-            ui->labelContent->setText(text);
-            ui->buttonRefresh->setEnabled(true);
-            searsh(word);
-            if(ui->list->count() == 0)
-            {
-                qDebug()<<"change";
-                ui->lineSelect->setText(textbutor.latinToKiril(word));
-                searsh(textbutor.latinToKiril(word));
-            }
-            ui->list->scrollToTop();
-        }
-
-        if(this->state == "order")
-        {
-            for(un n=1; n<size; n++)
-            {
-                un minimum = base[n].getMinimum();
-                un quantityInt = unsigned(base[n].getQuantity());
-                if (quantityInt < minimum)
-                {
-                    ui->list->addItem(getListItem(base[n]));
-                }
-            }
-            ui->list->scrollToTop();
-        }
-        ui->pushEdit->setEnabled(false);
-        ui->del->setEnabled(false);
-        this->state == "order" && ui->list->count()>0?ui->print->setHidden(false):ui->print->setHidden(true);
-        showOrderVal();
+        ui->list->scrollToTop();
+    }
+    ui->pushEdit->setEnabled(false);
+    ui->del->setEnabled(false);
+    this->state == "order" && ui->list->count()>0?ui->print->setHidden(false):ui->print->setHidden(true);
+    showOrderVal();
 
 }
 
@@ -196,7 +212,7 @@ void MainWindow::on_del_clicked()
     if(!ui->list->currentItem()->text().isEmpty())
     {
         unsigned code = ui->list->currentItem()->text().left(6).toInt();
-        Unit unit = uLoad.getUnit(code);
+        Unit unit = Unit_loader::get()->getUnit(code);
         QString msg;
         msg = "Удалить " + QString::fromLocal8Bit((unit.getName()).c_str()) + "?";
         QMessageBox msgBox;
@@ -207,7 +223,7 @@ void MainWindow::on_del_clicked()
         msgBox.setDefaultButton(QMessageBox::No);
         if(msgBox.exec() == QMessageBox::Yes)
         {
-            uLoad.del(code);
+            Unit_loader::get()->del(code);
             getListSelect();
         }
     }
@@ -219,15 +235,18 @@ void MainWindow::on_del_clicked()
 
 void MainWindow::on_buttonOrder_clicked()
 {
+    showOrderVal();
     ui->lineSelect->clear();
     this->state = "order";
     ui->list->clear();
     ui->labelContent->setText("Заказать товары...");
     ui->buttonRefresh->setEnabled(true);
+    setGroupsVisible(true);
 
     getListSelect();
     ui->pushEdit->setEnabled(false);
     ui->del->setEnabled(false);
+
 }
 
 
@@ -235,6 +254,7 @@ void MainWindow::on_buttonRefresh_clicked()
 {
     this->state = "normal";
     ui->lineSelect->clear();
+    setGroupsVisible(false);
     getListSelect();
 }
 
@@ -242,9 +262,9 @@ void MainWindow::on_buttonRefresh_clicked()
 void MainWindow::on_buttonCustomers_clicked()
 {
     timerSeller->stop();
-    Customers * box = new Customers(this);
-    box->show();
-    box->exec();
+    Customers box(this);
+    box.show();
+    box.exec();
 }
 
 
@@ -265,25 +285,26 @@ void MainWindow::searsh(QString word)
     }
     if(add.size()>0) whatSearsh.push_back(add);
 
-    std::vector<Unit>vBase = uLoad.base;
-    int size =  int(whatSearsh.size());
+    std::list<Unit>vBase = Unit_loader::get()->getBaseList();
+    size_t size = whatSearsh.size();
 
-    for(int n = size-1; n >= 0; n--)
+    for(size_t n = size; n-- >0;)
     {
-        for(unsigned i=0; i<vBase.size(); i++)
+        std::list<Unit>::iterator it = vBase.begin();
+        while(it != vBase.end())
         {
-            int coincidence = 0;
-            QString name = QString::fromLocal8Bit((vBase[i].getName()).c_str());
-            for(int a=0; a<size; a++)
+            size_t coincidence = 0;
+            QString name = QString::fromLocal8Bit(((*it).getName()).c_str());
+            for(size_t a=0; a<size; a++)
             {
                 if(name.contains(whatSearsh[a], Qt::CaseInsensitive)){coincidence++;}
             }
 
-            if (coincidence==(n+1))
-            {
-                ui->list->addItem(getListItem(vBase[i]));
-                vBase.erase(vBase.begin()+i);
-                i--;
+            if (coincidence==(n+1)){
+                ui->list->addItem(getListItem(*it));
+                it = vBase.erase(it);
+            }else{
+            it++;
             }
         }
 
@@ -294,24 +315,22 @@ void MainWindow::searsh(QString word)
 
 void MainWindow::on_statistica_clicked()
 {
-
     ui->list->clear();
-
     this->state = "statistica";
     ui->labelContent->setText("Статистика");
     ui->buttonRefresh->setEnabled(true);
 
-    QStringList files = uLoad.getFiles("LOG");
-    un length = files.length();
+    QStringList files = Unit_loader::get()->getFiles("LOG");
+    un length = un(files.length());
     for(un n = 0; n < length; n++)
     {
-        QString info = files[n];
+        QString info = files[int(n)];
         if (info.right(3)=="log")
         {
-            float balance = uLoad.daySummFromLog(info);
+            float balance = Unit_loader::get()->daySummFromLog(info);
             info = info.mid(4, info.size());
             info.chop(4);
-            info = textbutor.cutter(info, 12)+ QString::number(balance) + " грн.";
+            info = textbutor.cutter(info, 12)+ QString::number(double(balance)) + " грн.";
             ui->list->addItem(info);
         }
     }
@@ -322,19 +341,19 @@ void MainWindow::on_statistica_clicked()
 void MainWindow::on_buttonOptions_clicked()
 {
     timerSeller->stop();
-    Options * options = new Options(this);
-    options->show();
-    options->exec();
+    Options options(this);
+    options.show();
+    options.exec();
 }
 
 
 void MainWindow::on_buttonRecive_clicked()
 {
     timerSeller->stop();
-    Recive * recive = new Recive(this);
-    recive->show();
-    recive->exec();
-    uLoad.load();
+    Recive  recive(this);
+    recive.show();
+    recive.exec();
+    Unit_loader::get()->load();
     this->state = "normal";
     ui->lineSelect->clear();
     getListSelect();
@@ -347,17 +366,16 @@ void MainWindow::on_print_clicked()
     for (int n = 0; n < ui->list->count(); ++n)
     {
         QListWidgetItem* item = ui->list->item(n);
-        qResult+=item->text().mid(9,30);
+        qResult+=item->text().mid(9,33);
         qResult+=item->text().mid(60 , 5);
         qResult+="\n";
     }
-
 #ifndef QT_NO_PRINTER
     if(QPrinterInfo::availablePrinterNames().size() > 0)
     {
         QFont small("Lucida Console",6);
         QPrinter printer(QPrinter::HighResolution);
-        printer.setPrinterName(ini.getCheckPrinterName());
+        printer.setPrinterName(Ini::getInstance()->getCheckPrinterName());
         printer.setPageMargins(QMarginsF(0,0,0,0));
         QPainter paint(&printer);
         paint.setPen(Qt::black);
@@ -372,7 +390,7 @@ void MainWindow::on_print_clicked()
 void MainWindow::showOrderVal()
 {
     un value = 0;
-    std::vector<Unit>base = uLoad.base;
+    std::vector<Unit>base = Unit_loader::get()->base;
     unsigned size = un(base.size());
     for(un n=1; n<size; n++)
     {
@@ -386,6 +404,39 @@ void MainWindow::showOrderVal()
     ui->buttonOrder->setText(ui->buttonOrder->text().left(8));
     QString text = ui->buttonOrder->text() + " (" + QString::number(value) + ")";
     ui->buttonOrder->setText(text);
+}
+
+void MainWindow::getGroups()
+{
+    for(auto str : Unit_loader::get()->getGroups()){
+        QCheckBox * check = new QCheckBox(str);
+        check->setChecked(true);
+        groups.push_back(check);
+    }
+    for(auto check : groups)ui->horizontalLayout_2->addWidget(check);
+}
+
+
+void MainWindow::setGroupsVisible(bool isVisible)
+{
+    for(auto check : groups)check->setVisible(isVisible);
+}
+
+
+bool MainWindow::isGroupChecked(Unit  &unit)
+{
+    bool result = false;
+    for(auto check : groups){
+        if(unit.getGroup() == "No group"){
+            result = true;
+            break;
+        }
+        if (check->isChecked() && QString::fromLocal8Bit((unit.getGroup()).c_str()) == check->text()){
+            result = true;
+            break;
+        }
+    }
+    return result;
 }
 
 

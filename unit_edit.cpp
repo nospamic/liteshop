@@ -26,7 +26,7 @@ Unit_edit::Unit_edit(unsigned code, QWidget *parent)
 
 
 
-    QVBoxLayout * vert = new QVBoxLayout;
+    vert = new QVBoxLayout;
 
     lineName = new QLineEdit;
     lineName->setText(QString::fromLocal8Bit((unit.getName()).c_str()));
@@ -38,15 +38,15 @@ Unit_edit::Unit_edit(unsigned code, QWidget *parent)
     linePrice = new QLineEdit;
     linePrice->setValidator(new QRegExpValidator(money, this));
     linePrice->setText(QString::number(unit.getPrice()));
-    QString mes  = "Цена ("+ini.getAlternativeCurrency()+")";
+    QString mes  = "Цена ("+Ini::getInstance()->getAlternativeCurrency()+")";
     linePrice->setPlaceholderText(mes);
     hor0->addWidget(linePrice);
     QLabel * lblPrice = new QLabel("- цена в: ");
     hor0->addWidget(lblPrice);
-    checkUah = new QCheckBox(ini.getNationalCurrency());
+    checkUah = new QCheckBox(Ini::getInstance()->getNationalCurrency());
     hor0->addWidget(checkUah);
     if(unit.isUah())checkUah->setChecked(true);
-    checkUsd = new QCheckBox(ini.getAlternativeCurrency());
+    checkUsd = new QCheckBox(Ini::getInstance()->getAlternativeCurrency());
     hor0->addWidget(checkUsd);
     vert->addLayout(hor0);
     if(!unit.isUah())checkUsd->setChecked(true);
@@ -78,25 +78,14 @@ Unit_edit::Unit_edit(unsigned code, QWidget *parent)
     hor2->addWidget(lblBar);
     vert->addLayout(hor2);
 
-    QHBoxLayout * hor3 = new QHBoxLayout;
-    QLabel * lblEch = new QLabel("- наценка");
-    lineEcharge = new QLineEdit;
-    lineEcharge->setText(QString::number(unit.getEcharge()));
-    hor3->addWidget(lineEcharge);
-    hor3->addWidget(lblEch);
-    vert->addLayout(hor3);
-
-    lineSection = new QLineEdit;
-    lineSection->setText(QString::fromLocal8Bit((unit.getSection()).c_str()));
-     if(lineSection->text() == "No section") lineSection->clear();
-    lineSection->setPlaceholderText("Раздел..");
-    vert->addWidget(lineSection);
 
     lineGroup = new QLineEdit;
     lineGroup->setText(QString::fromLocal8Bit((unit.getGroup()).c_str()));
     if(lineGroup->text() == "No group") lineGroup->clear();
     lineGroup->setPlaceholderText("Группа..");
     vert->addWidget(lineGroup);
+
+    showGroups();
 
     textDescription = new QTextEdit;
     textDescription->setText(QString::fromLocal8Bit((unit.getDescription()).c_str()));
@@ -109,16 +98,16 @@ Unit_edit::Unit_edit(unsigned code, QWidget *parent)
     textSticker = new QTextEdit;
     hor4->addWidget(textSticker);
 
-    //textSticker->setFixedHeight(80);
-    //textSticker->setFont(small);
-    //textSticker->setText(textbutor.makeLable(QString::fromLocal8Bit(unit.getName().c_str()), unit.getPrice(), isUah));
-
     textSticker->moveCursor( QTextCursor::End );
     QTextCursor cursor( textSticker->textCursor() );
     QTextCharFormat format;
     format.setFont(small);
     cursor.setCharFormat( format );
     QString sales = "Продано " + QString::number(unit.getSales()) + " шт.\n";
+    sales +="Продаж в неделю: ";
+    sales += QString::number(double(unit.getSalesPerWeek()), 'g' ,2);
+
+    sales +=" шт.\n";
     cursor.insertText(sales);
 
     format.setFont(evan);
@@ -130,10 +119,8 @@ Unit_edit::Unit_edit(unsigned code, QWidget *parent)
     QString info = "\nИнфо:\n" + QString::fromLocal8Bit((unit.getHidden()).c_str());
     cursor.insertText(info);
     textSticker->moveCursor( QTextCursor::Start );
-    //textSticker->setDisabled(true);
+    textSticker->setReadOnly(true);
 
-    //printSticker = new QPushButton("Распечатать\nценник");
-    //hor4->addWidget(printSticker);
 
     QLabel * labelPrint = new QLabel(" Печатать \n ценники: ");
     hor4->addWidget(labelPrint);
@@ -153,6 +140,9 @@ Unit_edit::Unit_edit(unsigned code, QWidget *parent)
     connect(ok, SIGNAL(clicked(bool)), this, SLOT(itsOk()));
     connect(checkUah, SIGNAL(clicked(bool)), this, SLOT(on_checkUah()));
     connect(checkUsd, SIGNAL(clicked(bool)), this, SLOT(on_checkUsd()));
+    for(auto radio : groupList)
+        connect(radio, SIGNAL(clicked(bool)), this, SLOT(setGroup()));
+
 }
 
 Unit_edit::~Unit_edit()
@@ -163,9 +153,10 @@ Unit_edit::~Unit_edit()
 
 void Unit_edit::getFields()
 {
-    unit = uLoad.getUnit(code);
+    unit = Unit_loader::get()->getUnit(code);
     isUah = unit.isUah();
 }
+
 
 void Unit_edit::barcodeRepair()
 {
@@ -173,6 +164,54 @@ void Unit_edit::barcodeRepair()
     {
         lineBarcode->setText(textbutor.makeBarcode(code));
     }
+}
+
+
+void Unit_edit::showGroups(){
+    horGroups = new QHBoxLayout(this);
+    vertGroup0 = new QVBoxLayout(this);
+    vertGroup1 = new QVBoxLayout;
+    vertGroup2 = new QVBoxLayout;
+    vertGroup3 = new QVBoxLayout;
+
+
+
+   this->groupBox = new QGroupBox;
+    groupBox->setLayout(horGroups);
+
+    vert->addWidget(groupBox);
+    this->groupStyleSheet = groupBox->styleSheet();
+    if(this->lineGroup->text().isEmpty()) {
+        //groupBox->setStyleSheet("QGroupBox {background-color: red;}");
+        groupBox->setStyleSheet("QRadioButton {font-size: 12pt; font-family: Lucida Console;} QGroupBox {background-color: red;}");
+
+
+    }
+
+    std::vector<QString>q_goups = Unit_loader::get()->getGroups();
+    for(auto str : q_goups){
+        QRadioButton * check = new QRadioButton(str);
+        groupList.push_back(check);
+    }
+    for(un n = 0; n< groupList.size(); n++){
+        if(n<3)         vertGroup0->addWidget(groupList[n]);
+        if(n>=3 && n<6) vertGroup1->addWidget(groupList[n]);
+        if(n>=6 && n<9) vertGroup2->addWidget(groupList[n]);
+        if(n>=9) vertGroup3->addWidget(groupList[n]);
+        if (lineGroup->text().size() > 0 && lineGroup->text() == q_goups[n]){
+            groupList[n]->setChecked(true);
+        }
+    }
+    vertGroup0->addItem(new QSpacerItem(0,0,QSizePolicy::Expanding, QSizePolicy::Expanding));
+    vertGroup1->addItem(new QSpacerItem(0,0,QSizePolicy::Expanding, QSizePolicy::Expanding));
+    vertGroup2->addItem(new QSpacerItem(0,0,QSizePolicy::Expanding, QSizePolicy::Expanding));
+    vertGroup3->addItem(new QSpacerItem(0,0,QSizePolicy::Expanding, QSizePolicy::Expanding));
+    horGroups->addLayout(vertGroup0);
+    horGroups->addLayout(vertGroup1);
+    horGroups->addLayout(vertGroup2);
+    horGroups->addLayout(vertGroup3);
+    vert->addLayout(horGroups);
+
 }
 
 
@@ -188,11 +227,11 @@ void Unit_edit::itsOk()
     std::string barcode = lineBarcode->text().toLocal8Bit().constData();
     if (barcode!="") unit.setBarcode(barcode);
 
-    unit.setEcharge(textbutor.toDot(lineEcharge->text()).toFloat());
+    //unit.setEcharge(textbutor.toDot(lineEcharge->text()).toFloat());
 
 
-    std::string section = lineSection->text().toLocal8Bit().constData();
-    if (section!="") unit.setSection(section);
+    //std::string section = lineSection->text().toLocal8Bit().constData();
+    //if (section!="") unit.setSection(section);
 
     std::string group = lineGroup->text().toLocal8Bit().constData();
     if (group!="") unit.setGroup(group);
@@ -203,15 +242,15 @@ void Unit_edit::itsOk()
 
     unit.setMinimum(spinSales->value());
 
-    if(uLoad.getUnit(barcode).getCode() == code || !uLoad.unitExists(unit.getBarcode()))
+    if(Unit_loader::get()->getUnit(barcode).getCode() == code || !Unit_loader::get()->unitExists(unit.getBarcode()))
     {
-        uLoad.edit(unit);
+        Unit_loader::get()->edit(unit);
         printing();
         this->close();
     }
     else
     {
-        QString message=QString::fromLocal8Bit(uLoad.nameByBarcode(barcode).c_str());
+        QString message=QString::fromLocal8Bit(Unit_loader::get()->nameByBarcode(barcode).c_str());
         QMessageBox msg;
         msg.setText("Товар с таким штрих-кодом уже есть в базе: " + message);
         msg.exec();
@@ -225,7 +264,7 @@ void Unit_edit::printing()
     if(QPrinterInfo::availablePrinterNames().size() > 0)
     {
         ok->setEnabled(false);
-        int yCorrect = ini.getStickerVertCorrect();
+        int yCorrect = Ini::getInstance()->getStickerVertCorrect();
         std::vector<QString>words = textbutor.stringToVector(lineName->text());
 
         QString upWord = "";
@@ -261,7 +300,7 @@ void Unit_edit::printing()
         QFont evan(family, 32);
 
         QPrinter printer(QPrinter::HighResolution);
-        printer.setPrinterName(ini.getStickerPrinterName());
+        printer.setPrinterName(Ini::getInstance()->getStickerPrinterName());
         printer.setPaperSize(QSizeF(38.0, 23.0), QPrinter::Millimeter);
 
         for(int n = 0; n < spinPrint->value(); ++n )
@@ -311,4 +350,13 @@ void Unit_edit::on_checkUsd()
 {
     checkUah->setChecked(false);
     unit.setUah(false);
+}
+
+
+void Unit_edit::setGroup()
+{
+    for(auto radio : groupList){
+        if(radio->isChecked()) lineGroup->setText(radio->text());
+    }
+    groupBox->setStyleSheet("QRadioButton {font-size: 12pt; font-family: Lucida Console;}");
 }

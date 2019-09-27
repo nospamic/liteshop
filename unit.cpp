@@ -32,7 +32,9 @@ void Unit::setPrice(float price){this->price=price;}
 void Unit::setEcharge(float echarge){this->echarge=echarge;}
 void Unit::setName(std::string name){this->name=inFilter(name);}
 void Unit::setSection(std::string section){this->section=inFilter(section);}
-void Unit::setGroup(std::string group){this->group=inFilter(group);}
+void Unit::setGroup(std::string group){
+    if(group.size() != 0)this->group=inFilter(group);
+}
 void Unit::setDescription(std::string description){this->description=inFilter(description);}
 void Unit::setMinimum(un minimum){this->minimum = minimum;}
 void Unit::setHidden(std::string hidden){this->hidden=inFilter(hidden);}
@@ -114,6 +116,29 @@ un Unit::getSales()
 }
 
 
+std::string Unit::getCreateDate()
+{
+    std::string result = "";
+    for (un n = 2; n<hidden.size(); n++)
+    {
+        if(hidden[n]=='_') break;
+        result = result + hidden[n];
+    }
+    return result;
+}
+
+
+float Unit::getSalesPerWeek()
+{
+   int dayOld = Textbutor::dayInDate(getCreateDate());
+   int dayNow = Textbutor::dayInDate(getDate());
+   //std::cout<<"CrDat="<<getCreateDate()<<" date="<<getDate()<<" DayNow="<<dayNow<<"dayOl="<<dayOld<<"\n";
+   int weeks = (dayNow - dayOld)/7;
+   if(dayOld==0 || dayNow==0)return 0;
+   return float(getSales()) / weeks;
+}
+
+
 std::string Unit::inFilter(std::string str)
 {
     str = Textbutor::removeSpaces(str);
@@ -126,6 +151,18 @@ std::string Unit::outFilter(std::string str)
     str = Textbutor::endlAdd(str);
     str = Textbutor::spaceAdd(str);
     return str;
+}
+
+std::string Unit::getDate()
+{
+    struct tm *date;
+    time_t t = time(nullptr);
+    date = gmtime(&t);
+    int day =date->tm_mday;
+    int month = date->tm_mon+1;
+    int year = date->tm_year+1900;
+    std::string date1 = std::to_string(day) + "." + std::to_string(month) + "." + std::to_string(year);
+    return date1;
 }
 
 

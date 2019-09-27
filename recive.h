@@ -23,23 +23,25 @@
 #include "textbutor.h"
 #include "unit.h"
 #include "unit_loader.h"
+#include "windows.h"
 #include <vector>
 
 class Recive : public QDialog
 {
     Q_OBJECT
 public:
-    Recive(QWidget *parent = 0);
+    Recive(QWidget *parent = nullptr);
 private:
-    Ini ini;
+
     QLineEdit *line;
     QSpinBox *spin;
     QPushButton *del;
     QListWidget *list;
     QPushButton *ok;
     QPushButton *cancel;
+    QLabel * info;
 
-    Unit_loader loader;
+    //Unit_loader loader;
     std::vector <Unit> invoice;
     std::vector<int> quantity;
     float exchange;
@@ -57,6 +59,7 @@ private slots:
     void delFromInvoice();
     void okClicked();
     void cancelClicked();
+    void setInfo();
 };
 
 #endif // RECIVE_H

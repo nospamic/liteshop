@@ -55,7 +55,7 @@ HumanEdit::HumanEdit(unsigned code, bool activateCard, QWidget *parent)
 
 
     QHBoxLayout * hor2 = new QHBoxLayout;
-    QString str = "- долг (" + ini.getNationalCurrency() + ")";
+    QString str = "- долг (" + Ini::getInstance()->getNationalCurrency() + ")";
     QLabel * lab2 = new QLabel(str);
     lineDebt = new QLineEdit;
     lineDebt->setFixedWidth(200);
@@ -162,7 +162,7 @@ void HumanEdit::printSticker()
         QString family = QFontDatabase::applicationFontFamilies(id).at(0); //имя шрифта
         QFont evan(family, 32);
         QPrinter printer(QPrinter::HighResolution);
-        printer.setPrinterName(ini.getStickerPrinterName());
+        printer.setPrinterName(Ini::getInstance()->getStickerPrinterName());
         printer.setPaperSize(QSizeF(38.0, 23.0), QPrinter::Millimeter);
         printer.setPageMargins(0.0, 0.0, 0.0, 0.0, QPrinter::Millimeter);
         QPainter paint(&printer);

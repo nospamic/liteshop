@@ -1,7 +1,9 @@
 #ifndef UNIT_EDIT_H
 #define UNIT_EDIT_H
 
-
+#include <QGroupBox>
+#include <QDebug>
+#include <QRadioButton>
 #include <QDesktopWidget>
 #include <QValidator>
 #include <QDialog>
@@ -29,13 +31,14 @@ class Unit_edit : public QDialog
     Q_OBJECT
 
 public:
-    Unit_edit(unsigned code, QWidget *parent = 0);
+    Unit_edit(unsigned code, QWidget *parent = nullptr);
     ~Unit_edit();
 
 private:
     unsigned code;
+    QString groupStyleSheet;
 
-
+    QGroupBox *groupBox;
     QLineEdit * lineName;
     QLineEdit * linePrice;
     QCheckBox *checkUah;
@@ -50,18 +53,26 @@ private:
     QTextEdit * textSticker;
     QSpinBox * spinSales;
     QSpinBox * spinPrint;
-
+    QVBoxLayout * vert;
+    QHBoxLayout * horGroups;
+    QVBoxLayout * vertGroup0;
+    QVBoxLayout * vertGroup1;
+    QVBoxLayout * vertGroup2;
+    QVBoxLayout * vertGroup3;
 
 
     QPushButton * ok;
 
     bool isUah;
     Textbutor textbutor;
-    Unit_loader uLoad;
+    //Unit_loader uLoad;
     Unit unit;
-    Ini ini;
     void getFields();
     void barcodeRepair();
+
+    std::vector<QRadioButton*>groupList;
+    void showGroups();
+
 
 
 public slots:
@@ -69,6 +80,7 @@ public slots:
     void printing();
     void on_checkUah();
     void on_checkUsd();
+    void setGroup();
 };
 
 #endif // UNIT_EDIT_H

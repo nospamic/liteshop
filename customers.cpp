@@ -176,7 +176,7 @@ void Customers::addBlanks()
             QString family = QFontDatabase::applicationFontFamilies(id).at(0); //имя шрифта
             QFont evan(family, 32);
             QPrinter printer(QPrinter::HighResolution);
-            printer.setPrinterName(ini.getStickerPrinterName());
+            printer.setPrinterName(Ini::getInstance()->getStickerPrinterName());
             QPainter paint(&printer);
             paint.setPen(Qt::black);
             paint.setFont(small);

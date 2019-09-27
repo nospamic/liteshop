@@ -61,6 +61,9 @@ private slots:
 
     void on_print_clicked();
     void showOrderVal();
+    void getGroups();
+    void setGroupsVisible(bool);
+    bool isGroupChecked(Unit &unit);
 
 private:
     Ui::MainWindow *ui;
@@ -69,9 +72,9 @@ private:
 
 
 
-    Unit_loader uLoad;
+    //Unit_loader uLoad;
     Textbutor textbutor;
-    Ini ini;
+
 
     char *path;
     bool *isQueue;
@@ -79,7 +82,8 @@ private:
     QTimer *timerSeller;
     int wait;
     std::string date;
-    //Ini_loader options;
+    std::vector<QCheckBox*>groups;
+
 };
 
 #endif // MAINWINDOW_H

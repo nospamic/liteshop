@@ -2,6 +2,7 @@
 #define TEXTBUTOR_H
 
 #include <QString>
+#include <QDebug>
 #include <vector>
 #include <iostream>
 #include <ctime>
@@ -42,6 +43,8 @@ public:
     static int stdToInt(std::string str);
     static std::string intToString(int a);
     static std::string qToStd(QString str);
+    static int dayInDate(std::string date);
+    static int round(float a);
 
 
 };

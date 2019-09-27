@@ -1,5 +1,7 @@
 #include "unit_loader.h"
 
+Unit_loader * Unit_loader::instance = nullptr;
+
 Unit_loader::Unit_loader()
 {
     path="data.txt";
@@ -7,12 +9,19 @@ Unit_loader::Unit_loader()
     struct tm *date;
     time_t t = time(nullptr);
     date = gmtime(&t);
-    reservPath = Textbutor::qToStd(ini.getReservPath());
+    reservPath = Textbutor::qToStd(Ini::getInstance()->getReservPath());
     reservPath +=Textbutor::intToString(date->tm_wday);
     reservPath += "res_data.txt";
     logPath = "LOG\\day_"+ getDate() + ".log";
 
     load();
+}
+
+Unit_loader *Unit_loader::get(){
+    if(instance == nullptr){
+        instance = new Unit_loader;
+    }
+    return instance;
 }
 
 unsigned Unit_loader::getFileSize()
@@ -59,11 +68,9 @@ void Unit_loader::save()
     fs.open(path, std::fstream::in | std::fstream::out | std::fstream::trunc);
     !fs.is_open()?qDebug()<<"\nError open "<<path<<"\n":qDebug()<<"\nSave - "<<path<<"\n";
 
-    std::vector<Unit>::iterator it;
-    for(it = base.begin(); it != base.end(); it++)
+    //std::vector<Unit>::iterator it;
+    for(auto unit : base)
     {
-        Unit unit;
-        unit = *it;
         fs<<unit;
     }
     fs.close();
@@ -137,7 +144,7 @@ void Unit_loader::edit(Unit unit)
     save();
 }
 
-void Unit_loader::editSome(std::vector<Unit> invoice)
+void Unit_loader::editSome(std::vector<Unit> &invoice)
 {
     for(un n=0; n<invoice.size(); n++)
     {
@@ -294,9 +301,10 @@ void Unit_loader::makeReservCopy()
 
 int Unit_loader::round(float a)
 {
-    (a>=0) ? (a-int(a)>=0.5) ? a=int(a+1) : a=int(a) : true;
-    (a<0)  ? (a-int(a)<=-0.5) ?  a=int(a-1) : a=int(a) :  true;
-    return int(a);
+    a=a*100;
+    (a>=0) ? (a-int(a)>=0.5f) ? a=int(a+1) : a=int(a) : true;
+    (a<0)  ? (a-int(a)<=-0.5f) ?  a=int(a-1) : a=int(a) :  true;
+    return int(a/100);
 }
 
 
@@ -371,6 +379,52 @@ std::string Unit_loader::getDate()
     //std::cout<<date->tm_hour<<':'<<date->tm_min<<':'<<date->tm_sec;
     std::string date1 = std::to_string(day) + "_" + std::to_string(month) + "_" + std::to_string(year);
     return date1;
+}
+
+
+void Unit_loader::sortBaseByGroup(std::vector<Unit> &base)
+{
+    bool isSwaped = false;
+    un swCount = 0;
+    do{
+        isSwaped = false;
+        Unit sample = base[swCount];
+        for (un n=swCount;n<base.size();n++) {
+            if (base[n].getGroup() == sample.getGroup()){
+                std::swap(base[n], base[swCount]);
+                isSwaped = true;
+                swCount++;
+            }
+        }
+    }while(isSwaped && swCount<base.size());
+
+}
+
+
+std::vector<QString> Unit_loader::getGroups(){
+    std::vector<QString>result;
+    for (auto unit : base) {
+        bool present = false;
+        for(auto str : result){
+            if(str == Textbutor::stdToQ(unit.getGroup())) present = true;
+        }
+        if(!present && unit.getGroup() != "No group")result.push_back(Textbutor::stdToQ(unit.getGroup()));
+    }
+    return result;
+}
+
+
+float Unit_loader::getExchange()
+{
+    return getUnit(100000).getPrice();
+}
+
+
+std::list<Unit> Unit_loader::getBaseList()
+{
+    std::list<Unit>result;
+    for(auto unit : base) result.push_back(unit);
+    return result;
 }
 
 

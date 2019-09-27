@@ -35,7 +35,7 @@ private:
 
     Textbutor textbutor;
     HumanLoader humanloader;
-    Ini ini;
+
 
     QPushButton * buttonCards;
     QSpinBox * spinCards;

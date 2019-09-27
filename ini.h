@@ -11,8 +11,9 @@
 class Ini
 {
 public:
-    Ini();
+
     void save();
+    static Ini *getInstance();
 
     int getStickerVertCorrect();
     QString getCheckPrinterName();
@@ -34,7 +35,8 @@ public:
     void setStoreAddress(QString value);
     void setCheckText(QString value);
 private:
-
+    Ini();
+    static Ini *instance;
     int stickerVertCorrect;
     std::string checkPrinterName;
     std::string stickerPrinterName;
