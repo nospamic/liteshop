@@ -342,3 +342,38 @@ int Textbutor::round(float a)
         //qDebug()<<"Round result - "<<int(a);
         return int(a/100);
 }
+
+std::string Textbutor::encrypt(std::string str)
+{
+    std::string original = "1234567890qwertyuiopasdfghjklzxcvbnmQWERTYUIOP";
+    std::string change =   "QWERTYUIOPghjklzxcvbnmqwertyuiopasdf1234567890";
+
+    for(auto &sign : str){
+        for(size_t i = 0; i < original.size(); ++i){
+            if (sign == original[i]) {
+                std::cout<<sign<<"\t"<<int(sign)<<"\t";
+                sign = change[i];
+                std::cout<<sign<<"\t"<<int(sign)<<"\n";
+                break;
+            }
+        }
+    }
+    return str;
+}
+
+std::string Textbutor::decrypt(std::string str)
+{
+    std::string original = "1234567890qwertyuiopasdfghjklzxcvbnmQWERTYUIOP";
+    std::string change =   "QWERTYUIOPghjklzxcvbnmqwertyuiopasdf1234567890";
+    for(auto &sign : str){
+        for(size_t i = 0; i < original.size(); ++i){
+            if (sign == change[i]) {
+                std::cout<<sign<<"\t"<<int(sign)<<"\t";
+                sign = original[i];
+                std::cout<<sign<<"\t"<<int(sign)<<"\n";
+                break;
+            }
+        }
+    }
+    return str;
+}

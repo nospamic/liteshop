@@ -140,6 +140,7 @@ Unit_edit::Unit_edit(unsigned code, QWidget *parent)
     connect(ok, SIGNAL(clicked(bool)), this, SLOT(itsOk()));
     connect(checkUah, SIGNAL(clicked(bool)), this, SLOT(on_checkUah()));
     connect(checkUsd, SIGNAL(clicked(bool)), this, SLOT(on_checkUsd()));
+    connect(spinPrint, SIGNAL(valueChanged(int)), this, SLOT(on_changePrint()));
     for(auto radio : groupList)
         connect(radio, SIGNAL(clicked(bool)), this, SLOT(setGroup()));
 
@@ -182,11 +183,8 @@ void Unit_edit::showGroups(){
     vert->addWidget(groupBox);
     this->groupStyleSheet = groupBox->styleSheet();
     if(this->lineGroup->text().isEmpty()) {
-        //groupBox->setStyleSheet("QGroupBox {background-color: red;}");
         groupBox->setStyleSheet("QRadioButton {font-size: 12pt; font-family: Lucida Console;} QGroupBox {background-color: red;}");
-
-
-    }
+   }
 
     std::vector<QString>q_goups = Unit_loader::get()->getGroups();
     for(auto str : q_goups){
@@ -359,4 +357,9 @@ void Unit_edit::setGroup()
         if(radio->isChecked()) lineGroup->setText(radio->text());
     }
     groupBox->setStyleSheet("QRadioButton {font-size: 12pt; font-family: Lucida Console;}");
+}
+
+void Unit_edit::on_changePrint()
+{
+    if (this->spinPrint->value() > this->spinQuant->value()) this->spinQuant->setValue(this->spinPrint->value());
 }

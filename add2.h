@@ -56,6 +56,7 @@ public slots:
     void printSticker();
     void okEnable();
     void groupChecked();
+    void on_changePrint();
 };
 
 #endif // ADD2_H

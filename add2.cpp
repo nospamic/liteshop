@@ -105,6 +105,7 @@ Add2::Add2(QWidget *parent)
     connect(lineName, SIGNAL(textChanged(QString)), this, SLOT(okEnable()));
     connect(linePrice, SIGNAL(textChanged(QString)), this, SLOT(okEnable()));
     connect(lineBarcode, SIGNAL(textChanged(QString)), this, SLOT(okEnable()));
+    connect(spinPrint, SIGNAL(valueChanged(int)), this, SLOT(on_changePrint()));
     for(auto check : groupList)
         connect(check, SIGNAL(clicked(bool)), this, SLOT(groupChecked()));
 }
@@ -282,4 +283,11 @@ void Add2::okEnable()
 
 void Add2::groupChecked(){
 
+}
+
+void Add2::on_changePrint()
+{
+    if (this->spinPrint->value() > this->spinQuant->value()){
+        this->spinQuant->setValue(this->spinPrint->value());
+    }
 }

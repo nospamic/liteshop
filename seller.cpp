@@ -23,6 +23,7 @@ Seller::Seller(QWidget *parent)
     timer = new QTimer(this);
     payTimer = new QTimer(this);
     timerActiveSeller = new QTimer(this);
+    timerFastFind = new QTimer(this);
 
 
     QFont font("Lucida Console",12);
@@ -128,7 +129,8 @@ Seller::Seller(QWidget *parent)
     connect(listCheck, SIGNAL(doubleClicked(QModelIndex)), this, SLOT(delFromCheck()));
     connect(checkBack, SIGNAL(clicked(bool)), this, SLOT(backClicked()));
     connect(timer, SIGNAL(timeout()),this, SLOT(colorLine()));
-    connect(payTimer, SIGNAL(timeout()),lineBarcod, SLOT(setFocus()));
+    connect(payTimer, SIGNAL(timeout()),this, SLOT(on_payTimerTimeout()));
+    connect(timerFastFind, SIGNAL(timeout()),this, SLOT(on_timerFastFindTimeout()));
     connect(listSearsh, SIGNAL(clicked(QModelIndex)), lineBarcod, SLOT(setFocus()));
     connect(buttonDebt, SIGNAL(pressed()), this, SLOT(debt()));
     connect(timerActiveSeller, SIGNAL(timeout()), this, SLOT(resetActiveSeller()));
@@ -729,8 +731,22 @@ void Seller::fastFind()
 {
     if(!lineBarcod->text().contains(QRegExp("[0-9]{7,14}")) && !lineBarcod->text().isEmpty()){
         getListSelect();
+        timerFastFind->start(5000);
         //qDebug()<<"FastFind-"<<lineBarcod->text();
     }
+}
+
+
+void Seller::on_payTimerTimeout()
+{
+    lineBarcod->setFocus();
+
+}
+
+
+void Seller::on_timerFastFindTimeout()
+{
+    lineBarcod->clear();
 }
 
 

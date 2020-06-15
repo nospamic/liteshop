@@ -63,6 +63,7 @@ private:
     QTimer *timer;
     QTimer *payTimer;
     QTimer *timerActiveSeller;
+    QTimer *timerFastFind;
     QPalette white;
     QPalette red;
     QPalette yellow;
@@ -120,6 +121,8 @@ private slots:
     void setActiveSeller(int activeSeller);
     void resetActiveSeller();
     void fastFind();
+    void on_payTimerTimeout();
+    void on_timerFastFindTimeout();
 
 };
 

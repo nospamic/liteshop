@@ -45,6 +45,8 @@ public:
     static std::string qToStd(QString str);
     static int dayInDate(std::string date);
     static int round(float a);
+    static std::string encrypt(std::string);
+    static std::string decrypt(std::string);
 
 
 };

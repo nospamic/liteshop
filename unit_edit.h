@@ -81,6 +81,7 @@ public slots:
     void on_checkUah();
     void on_checkUsd();
     void setGroup();
+    void on_changePrint();
 };
 
 #endif // UNIT_EDIT_H

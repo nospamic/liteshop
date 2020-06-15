@@ -52,7 +52,12 @@ MainWindow::MainWindow(QWidget *parent) :
 //            qDebug()<<unit.getCode()<<" "<<bar<<" "<<Textbutor::testBarcode13(bar);
 //        }
 //    }
-
+    std::string a = "Пашаюляона\n";
+    std::cout<<a<<"  "<<a.size();
+    a=Textbutor::encrypt(a);
+    std::cout<<a;
+    a=Textbutor::decrypt(a);
+    std::cout<<a;
 }
 
 MainWindow::~MainWindow()
